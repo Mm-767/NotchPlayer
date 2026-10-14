@@ -1,5 +1,23 @@
+import Foundation
 import Testing
 @testable import NotchPlayer
+
+@MainActor
+@Test func 진행바는_재생_중일_때만_흐르고_곡_길이를_넘지_않는다() {
+    let nowPlaying = NowPlaying()
+    let start = Date()
+
+    nowPlaying.duration = 100
+    nowPlaying.position = 10
+    nowPlaying.positionDate = start
+
+    nowPlaying.isPlaying = true
+    #expect(nowPlaying.elapsed(at: start.addingTimeInterval(5)) == 15)
+    #expect(nowPlaying.elapsed(at: start.addingTimeInterval(500)) == 100)
+
+    nowPlaying.isPlaying = false
+    #expect(nowPlaying.elapsed(at: start.addingTimeInterval(5)) == 10)
+}
 
 // 실제 앱 이름(Spotify, Music)을 쓰면 AppleScript로 앨범아트를 물으러 가므로 가짜 이름을 쓴다
 @MainActor

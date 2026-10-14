@@ -25,6 +25,10 @@ struct NotchView: View {
         }
         .frame(width: size.width, height: size.height)
         .onHover { hovering in
+            if hovering {
+                nowPlaying.refreshPosition()
+            }
+
             withAnimation(.spring(duration: 0.3)) {
                 isExpanded = hovering
             }
@@ -60,7 +64,35 @@ struct NotchView: View {
         .buttonStyle(.plain)
     }
 
+    private var progress: some View {
+        TimelineView(.periodic(from: .now, by: 1)) { context in
+            Scrubber(
+                value: nowPlaying.elapsed(at: context.date),
+                total: nowPlaying.duration,
+                onSeek: nowPlaying.seek(to:)
+            )
+        }
+    }
+
     private var trackInfo: some View {
+        VStack(spacing: 12) {
+            trackRow
+
+            if nowPlaying.duration > 0 {
+                progress
+            }
+        }
+        .lineLimit(1)
+        .padding(.top, notchSize.height)
+        .padding(.horizontal, 24)
+        .frame(
+            maxWidth: .infinity,
+            maxHeight: .infinity,
+            alignment: .leading
+        )
+    }
+
+    private var trackRow: some View {
         HStack(spacing: 12) {
             if let artwork = nowPlaying.artwork {
                 Image(nsImage: artwork)
@@ -97,14 +129,6 @@ struct NotchView: View {
                 controls
             }
         }
-        .lineLimit(1)
-        .padding(.top, notchSize.height)
-        .padding(.horizontal, 24)
-        .frame(
-            maxWidth: .infinity,
-            maxHeight: .infinity,
-            alignment: .leading
-        )
     }
 }
 

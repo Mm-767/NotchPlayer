@@ -29,6 +29,11 @@ final class NowPlaying {
     var isPlaying = false
     var automationDenied = false
 
+    // 진행바: 마지막으로 앱에 물어본 위치(초)와 그 시각에서 흐른 시간을 더해 그린다
+    var duration: Double = 0
+    var position: Double = 0
+    var positionDate = Date()
+
     // 둘 다 재생 중이면 마지막으로 재생을 시작한 앱을 보여준다
     private var currentSource = ""
 
@@ -74,6 +79,7 @@ final class NowPlaying {
             self.artist = ""
             artwork = nil
             isPlaying = false
+            duration = 0
             return
         }
 
@@ -88,6 +94,39 @@ final class NowPlaying {
             artwork = nil
             loadArtwork(source)
         }
+
+        loadPosition(source)
+    }
+
+    func elapsed(at date: Date) -> Double {
+        guard isPlaying else {
+            return position
+        }
+
+        return min(duration, position + date.timeIntervalSince(positionDate))
+    }
+
+    private func loadPosition(_ source: String) {
+        guard
+            let app = playerApps.first(where: { $0.name == source }),
+            isRunning(app)
+        else {
+            return
+        }
+
+        let script = "tell application \"\(app.name)\" to {player position, duration of current track}"
+
+        guard let result = runAppleScript(script), result.numberOfItems == 2 else {
+            return
+        }
+
+        let rawDuration = result.atIndex(2)?.doubleValue ?? 0
+
+        position = result.atIndex(1)?.doubleValue ?? 0
+        positionDate = Date()
+
+        // 곡 길이 단위: Spotify는 밀리초, Music은 초
+        duration = app.name == "Spotify" ? rawDuration / 1000 : rawDuration
     }
 
     // command: playpause, next track, previous track (Spotify와 Music이 같은 이름을 쓴다)
@@ -100,6 +139,26 @@ final class NowPlaying {
         }
 
         _ = runAppleScript("tell application \"\(app.name)\" to \(command)")
+    }
+
+    // 앱 안에서 재생 위치를 옮기면 알림이 오지 않아서, 노치를 펼칠 때 다시 묻는다
+    func refreshPosition() {
+        loadPosition(currentSource)
+    }
+
+    func seek(to seconds: Double) {
+        guard
+            let app = playerApps.first(where: { $0.name == currentSource }),
+            isRunning(app)
+        else {
+            return
+        }
+
+        _ = runAppleScript("tell application \"\(app.name)\" to set player position to \(seconds)")
+
+        // 위치를 옮겨도 알림이 오지 않으므로 직접 반영한다
+        position = seconds
+        positionDate = Date()
     }
 
     // 켤 때는 곡이 바뀌기 전이라 알림이 없으니 앱에 직접 묻는다
