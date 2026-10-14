@@ -1,5 +1,7 @@
 # NotchPlayer
 
+<img src="docs/icon.png" width="128" alt="NotchPlayer 아이콘">
+
 맥북 노치에 숨어 있다가 마우스를 올리면 펼쳐지는 뮤직 플레이어입니다. Spotify와 Apple Music을 지원합니다.
 
 ![펼친 노치](docs/screenshot.png)
@@ -37,6 +39,8 @@ macOS 14 이상, Xcode(Swift 6), 노치가 있는 맥북이 필요합니다.
 scripts/build-app.sh
 open /Applications/NotchPlayer.app
 ```
+
+앱 아이콘은 `scripts/icon.swift`가 코드로 그리고, `scripts/make-icon.sh`가 크기별로 줄여 `AppIcon.icns`로 묶습니다. 그림을 고쳤을 때만 다시 실행하면 됩니다.
 
 `scripts/build-app.sh`는 릴리스 빌드를 `/Applications/NotchPlayer.app`으로 묶고 키체인의 "Apple Development" 인증서로 서명합니다. 같은 인증서로 서명하면 다시 빌드해도 자동화 권한을 다시 묻지 않습니다. 인증서가 없으면 스크립트의 `--sign` 값을 `-`(ad-hoc)로 바꾸면 되는데, 이 경우 빌드할 때마다 권한을 다시 물을 수 있습니다(확인하지 않음).
 
