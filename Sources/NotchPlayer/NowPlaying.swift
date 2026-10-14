@@ -1,5 +1,9 @@
 import AppKit
 import Observation
+import os
+
+// 지표 측정용. 읽기: /usr/bin/log show --predicate 'subsystem == "io.github.mm-767.NotchPlayer"' --last 10m
+private let log = Logger(subsystem: "io.github.mm-767.NotchPlayer", category: "timing")
 
 private struct PlayerApp {
     let name: String
@@ -49,6 +53,8 @@ final class NowPlaying {
                 let title = info["Name"] as? String ?? ""
                 let artist = info["Artist"] as? String ?? ""
 
+                log.notice("notify \(app.name, privacy: .public) \(state, privacy: .public)")
+
                 MainActor.assumeIsolated {
                     self?.update(
                         source: app.name,
@@ -61,6 +67,21 @@ final class NowPlaying {
 
             loadCurrentTrack(app)
         }
+
+        #if BENCH
+        // 지표 측정 전용 빌드: 다른 프로세스가 분산 알림으로 버튼과 같은 명령을 보낼 수 있다
+        DistributedNotificationCenter.default().addObserver(
+            forName: Notification.Name("io.github.mm-767.NotchPlayer.bench"),
+            object: nil,
+            queue: .main
+        ) { [weak self] note in
+            let command = note.object as? String ?? ""
+
+            MainActor.assumeIsolated {
+                self?.send(command)
+            }
+        }
+        #endif
     }
 
     func update(source: String, state: String, title: String, artist: String) {
@@ -138,6 +159,8 @@ final class NowPlaying {
             return
         }
 
+        log.notice("send \(command, privacy: .public)")
+
         _ = runAppleScript("tell application \"\(app.name)\" to \(command)")
     }
 
@@ -155,7 +178,12 @@ final class NowPlaying {
 
     // 앱 안에서 재생 위치를 옮기면 알림이 오지 않아서, 노치를 펼칠 때 다시 묻는다
     func refreshPosition() {
+        let predicted = elapsed(at: Date())
+
         loadPosition(currentSource)
+
+        // 진행바가 앱의 실제 위치와 얼마나 어긋나 있었는지 (양수면 진행바가 앞서 있었음)
+        log.notice("drift \(predicted - self.position, format: .fixed(precision: 2))s")
     }
 
     func seek(to seconds: Double) {
@@ -214,6 +242,7 @@ final class NowPlaying {
             // 받아오는 사이에 곡이 바뀌었으면 버린다
             if title == requestedTitle {
                 artwork = image
+                log.notice("artwork \(app.name, privacy: .public) \(image == nil ? "nil" : "ok", privacy: .public)")
             }
         }
     }
@@ -250,12 +279,17 @@ final class NowPlaying {
 
     // ponytail: 메인 스레드에서 동기로 실행해서 앱 응답이 늦으면 UI가 잠깐 멈춘다. 끊기면 osascript 프로세스로 옮긴다
     private func runAppleScript(_ source: String) -> NSAppleEventDescriptor? {
+        let start = Date()
         var error: NSDictionary?
         let result = NSAppleScript(source: source)?.executeAndReturnError(&error)
 
         // -1743: 사용자가 자동화 권한을 거부함
         let errorCode = error?[NSAppleScript.errorNumber] as? Int
         automationDenied = errorCode == -1743
+
+        let milliseconds = Int(Date().timeIntervalSince(start) * 1000)
+        let summary = source.replacingOccurrences(of: "\n", with: " ").prefix(60)
+        log.notice("applescript \(milliseconds)ms error=\(errorCode ?? 0) \(summary, privacy: .public)")
 
         return result
     }

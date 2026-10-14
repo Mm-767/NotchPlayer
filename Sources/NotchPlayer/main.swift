@@ -1,4 +1,5 @@
 import AppKit
+import ServiceManagement
 import SwiftUI
 
 let expandedSize = CGSize(width: 400, height: 160)
@@ -141,6 +142,13 @@ let app = NSApplication.shared
 
 // Dock 아이콘 없이 실행
 app.setActivationPolicy(.accessory)
+
+// 처음 한 번만 로그인 항목에 등록한다. 사용자가 시스템 설정에서 끄면 다시 켜지 않는다
+// (한 번도 등록 안 한 앱의 status는 notRegistered가 아니라 notFound라서 status로는 판단하지 않는다)
+if !UserDefaults.standard.bool(forKey: "didRegisterLoginItem"),
+   (try? SMAppService.mainApp.register()) != nil {
+    UserDefaults.standard.set(true, forKey: "didRegisterLoginItem")
+}
 
 // 노치가 있는 화면 (외부 모니터가 main일 수 있어서 직접 찾는다)
 let screen = NSScreen.screens.first { $0.safeAreaInsets.top > 0 } ?? NSScreen.main!

@@ -4,9 +4,10 @@ set -e
 
 cd "$(dirname "$0")/.."
 
-swift build -c release
+# 측정용 빌드: scripts/build-app.sh -Xswiftc -DBENCH
+swift build -c release "$@"
 
-APP=.build/NotchPlayer.app
+APP=/Applications/NotchPlayer.app
 
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS"
