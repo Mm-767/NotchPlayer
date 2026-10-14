@@ -5,6 +5,7 @@ let expandedSize = CGSize(width: 400, height: 160)
 
 struct NotchView: View {
     let notchSize: CGSize
+    let nowPlaying: NowPlaying
 
     @State private var isExpanded = false
 
@@ -17,6 +18,11 @@ struct NotchView: View {
             bottomTrailingRadius: radius
         )
         .fill(.black)
+        .overlay {
+            if isExpanded {
+                trackInfo
+            }
+        }
         .frame(width: size.width, height: size.height)
         .onHover { hovering in
             withAnimation(.spring(duration: 0.3)) {
@@ -27,6 +33,30 @@ struct NotchView: View {
             maxWidth: .infinity,
             maxHeight: .infinity,
             alignment: .top
+        )
+    }
+
+    private var trackInfo: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            if nowPlaying.title.isEmpty {
+                Text("재생 중인 곡 없음")
+                    .foregroundStyle(.gray)
+            } else {
+                Text(nowPlaying.title)
+                    .font(.headline)
+                    .foregroundStyle(.white)
+
+                Text(nowPlaying.artist)
+                    .foregroundStyle(.gray)
+            }
+        }
+        .lineLimit(1)
+        .padding(.top, notchSize.height)
+        .padding(.horizontal, 24)
+        .frame(
+            maxWidth: .infinity,
+            maxHeight: .infinity,
+            alignment: .leading
         )
     }
 }
@@ -75,7 +105,11 @@ panel.collectionBehavior = [
 panel.isOpaque = false
 panel.backgroundColor = .clear
 panel.hasShadow = false
-panel.contentView = NSHostingView(rootView: NotchView(notchSize: notchSize))
+let nowPlaying = NowPlaying()
+
+panel.contentView = NSHostingView(
+    rootView: NotchView(notchSize: notchSize, nowPlaying: nowPlaying)
+)
 panel.orderFrontRegardless()
 
 print("notch: \(notchSize), panel: \(panelFrame)")

@@ -5,6 +5,10 @@ let package = Package(
     name: "NotchPlayer",
     platforms: [.macOS(.v14)],
     targets: [
-        .executableTarget(name: "NotchPlayer")
+        .executableTarget(name: "NotchPlayer"),
+        .testTarget(
+            name: "NotchPlayerTests",
+            dependencies: ["NotchPlayer"]
+        )
     ]
 )
