@@ -31,7 +31,19 @@ macOS 15.4부터 시스템 전체의 "지금 재생 중" 정보(비공개 MediaR
 
 AppleScript를 쓰기 때문에 처음 실행할 때 "NotchPlayer가 Spotify를 제어하려고 합니다" 자동화 권한을 한 번 허용해야 합니다.
 
-## 빌드와 설치
+## 설치
+
+macOS 14 이상, 노치가 있는 맥북이 필요합니다.
+
+1. [Releases](https://github.com/Mm-767/NotchPlayer/releases)에서 `NotchPlayer-v<버전>.zip`을 내려받아 풀고, `NotchPlayer.app`을 응용 프로그램 폴더로 옮깁니다.
+2. 처음 열면 "확인되지 않은 개발자" 경고와 함께 열리지 않습니다. Apple 공증을 받지 않은 앱이라서입니다. 둘 중 하나로 엽니다.
+   - 시스템 설정 → 개인정보 보호 및 보안 → 아래쪽 "그래도 열기"
+   - 터미널에서 `xattr -dr com.apple.quarantine /Applications/NotchPlayer.app` 실행 후 다시 열기
+3. "NotchPlayer가 Spotify(또는 Music)를 제어하려고 합니다"가 뜨면 허용합니다.
+
+처음 한 번 열면 로그인 항목에 등록되어, 다음부터는 맥을 켤 때 자동으로 실행됩니다.
+
+## 직접 빌드하기
 
 macOS 14 이상, Xcode(Swift 6), 노치가 있는 맥북이 필요합니다.
 
@@ -43,6 +55,8 @@ open /Applications/NotchPlayer.app
 앱 아이콘은 `scripts/icon.swift`가 코드로 그리고, `scripts/make-icon.sh`가 크기별로 줄여 `AppIcon.icns`로 묶습니다. 그림을 고쳤을 때만 다시 실행하면 됩니다.
 
 `scripts/build-app.sh`는 릴리스 빌드를 `/Applications/NotchPlayer.app`으로 묶고 키체인의 "Apple Development" 인증서로 서명합니다. 같은 인증서로 서명하면 다시 빌드해도 자동화 권한을 다시 묻지 않습니다. 인증서가 없으면 스크립트의 `--sign` 값을 `-`(ad-hoc)로 바꾸면 되는데, 이 경우 빌드할 때마다 권한을 다시 물을 수 있습니다(확인하지 않음).
+
+배포용 zip은 `scripts/release.sh`로 만듭니다. 개발용 인증서 대신 ad-hoc 서명으로 빌드해 `dist/`에 넣습니다.
 
 테스트:
 
