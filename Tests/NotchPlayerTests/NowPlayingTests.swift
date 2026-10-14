@@ -14,9 +14,12 @@ import Testing
     nowPlaying.update(source: "app1", state: "Paused", title: "A", artist: "a")
     #expect(nowPlaying.title == "B")
 
+    #expect(nowPlaying.isPlaying)
+
     // 표시 중인 app2가 멈추면 곡 정보는 남겨 둔다
     nowPlaying.update(source: "app2", state: "Paused", title: "B", artist: "b")
     #expect(nowPlaying.title == "B")
+    #expect(!nowPlaying.isPlaying)
 
     // 표시 중인 app2가 종료되면 비운다
     nowPlaying.update(source: "app2", state: "Stopped", title: "", artist: "")

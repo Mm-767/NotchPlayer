@@ -26,6 +26,7 @@ final class NowPlaying {
     var title = ""
     var artist = ""
     var artwork: NSImage?
+    var isPlaying = false
     var automationDenied = false
 
     // 둘 다 재생 중이면 마지막으로 재생을 시작한 앱을 보여준다
@@ -72,6 +73,7 @@ final class NowPlaying {
             self.title = ""
             self.artist = ""
             artwork = nil
+            isPlaying = false
             return
         }
 
@@ -80,11 +82,24 @@ final class NowPlaying {
         currentSource = source
         self.title = title
         self.artist = artist
+        isPlaying = state == "Playing"
 
         if trackChanged {
             artwork = nil
             loadArtwork(source)
         }
+    }
+
+    // command: playpause, next track, previous track (Spotify와 Music이 같은 이름을 쓴다)
+    func send(_ command: String) {
+        guard
+            let app = playerApps.first(where: { $0.name == currentSource }),
+            isRunning(app)
+        else {
+            return
+        }
+
+        _ = runAppleScript("tell application \"\(app.name)\" to \(command)")
     }
 
     // 켤 때는 곡이 바뀌기 전이라 알림이 없으니 앱에 직접 묻는다

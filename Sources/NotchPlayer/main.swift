@@ -36,6 +36,30 @@ struct NotchView: View {
         )
     }
 
+    private var controls: some View {
+        HStack(spacing: 16) {
+            controlButton("backward.fill", command: "previous track")
+
+            controlButton(
+                nowPlaying.isPlaying ? "pause.fill" : "play.fill",
+                command: "playpause"
+            )
+
+            controlButton("forward.fill", command: "next track")
+        }
+    }
+
+    private func controlButton(_ symbol: String, command: String) -> some View {
+        Button {
+            nowPlaying.send(command)
+        } label: {
+            Image(systemName: symbol)
+                .font(.title2)
+                .foregroundStyle(.white)
+        }
+        .buttonStyle(.plain)
+    }
+
     private var trackInfo: some View {
         HStack(spacing: 12) {
             if let artwork = nowPlaying.artwork {
@@ -65,6 +89,12 @@ struct NotchView: View {
                         NSWorkspace.shared.open(url)
                     }
                 }
+            }
+
+            if !nowPlaying.title.isEmpty {
+                Spacer()
+
+                controls
             }
         }
         .lineLimit(1)
