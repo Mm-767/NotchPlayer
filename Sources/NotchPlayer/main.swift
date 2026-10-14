@@ -37,17 +37,34 @@ struct NotchView: View {
     }
 
     private var trackInfo: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            if nowPlaying.title.isEmpty {
-                Text("재생 중인 곡 없음")
-                    .foregroundStyle(.gray)
-            } else {
-                Text(nowPlaying.title)
-                    .font(.headline)
-                    .foregroundStyle(.white)
+        HStack(spacing: 12) {
+            if let artwork = nowPlaying.artwork {
+                Image(nsImage: artwork)
+                    .resizable()
+                    .frame(width: 56, height: 56)
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+            }
 
-                Text(nowPlaying.artist)
-                    .foregroundStyle(.gray)
+            VStack(alignment: .leading, spacing: 4) {
+                if nowPlaying.title.isEmpty {
+                    Text("재생 중인 곡 없음")
+                        .foregroundStyle(.gray)
+                } else {
+                    Text(nowPlaying.title)
+                        .font(.headline)
+                        .foregroundStyle(.white)
+
+                    Text(nowPlaying.artist)
+                        .foregroundStyle(.gray)
+                }
+
+                // 권한을 한 번 거부하면 macOS가 다시 묻지 않아서 설정으로 보낸다
+                if nowPlaying.automationDenied {
+                    Button("시스템 설정에서 자동화 허용하기") {
+                        let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Automation")!
+                        NSWorkspace.shared.open(url)
+                    }
+                }
             }
         }
         .lineLimit(1)
@@ -106,6 +123,7 @@ panel.isOpaque = false
 panel.backgroundColor = .clear
 panel.hasShadow = false
 let nowPlaying = NowPlaying()
+nowPlaying.start()
 
 panel.contentView = NSHostingView(
     rootView: NotchView(notchSize: notchSize, nowPlaying: nowPlaying)

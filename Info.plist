@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleIdentifier</key>
+    <string>io.github.mm-767.NotchPlayer</string>
+    <key>CFBundleName</key>
+    <string>NotchPlayer</string>
+    <key>CFBundleExecutable</key>
+    <string>NotchPlayer</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleShortVersionString</key>
+    <string>0.1</string>
+    <key>LSMinimumSystemVersion</key>
+    <string>14.0</string>
+    <key>LSUIElement</key>
+    <true/>
+    <key>NSAppleEventsUsageDescription</key>
+    <string>재생 중인 곡과 앨범아트를 가져오고 재생을 제어하려고 Spotify와 Music에 접근합니다.</string>
+</dict>
+</plist>
