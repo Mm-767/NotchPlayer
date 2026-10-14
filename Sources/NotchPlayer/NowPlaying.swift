@@ -141,6 +141,18 @@ final class NowPlaying {
         _ = runAppleScript("tell application \"\(app.name)\" to \(command)")
     }
 
+    // 지금 표시 중인 곡을 재생하는 앱을 앞으로 띄운다
+    func openCurrentApp() {
+        guard
+            let app = playerApps.first(where: { $0.name == currentSource }),
+            let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: app.bundleID)
+        else {
+            return
+        }
+
+        NSWorkspace.shared.openApplication(at: url, configuration: NSWorkspace.OpenConfiguration())
+    }
+
     // 앱 안에서 재생 위치를 옮기면 알림이 오지 않아서, 노치를 펼칠 때 다시 묻는다
     func refreshPosition() {
         loadPosition(currentSource)

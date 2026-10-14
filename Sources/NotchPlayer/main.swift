@@ -95,10 +95,15 @@ struct NotchView: View {
     private var trackRow: some View {
         HStack(spacing: 12) {
             if let artwork = nowPlaying.artwork {
-                Image(nsImage: artwork)
-                    .resizable()
-                    .frame(width: 56, height: 56)
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                Button {
+                    nowPlaying.openCurrentApp()
+                } label: {
+                    Image(nsImage: artwork)
+                        .resizable()
+                        .frame(width: 56, height: 56)
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                }
+                .buttonStyle(.plain)
             }
 
             VStack(alignment: .leading, spacing: 4) {
