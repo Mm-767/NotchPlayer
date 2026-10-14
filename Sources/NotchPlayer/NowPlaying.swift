@@ -32,6 +32,13 @@ final class NowPlaying {
     var artwork: NSImage?
     var isPlaying = false
     var automationDenied = false
+    var shuffle = false
+
+    // "off", "all", "one" (Spotify는 "off"와 "all"만)
+    var repeatMode = "off"
+
+    // nil이면 좋아요를 지원하지 않는 앱 (Spotify는 AppleScript로 읽고 쓸 수 없다)
+    var isFavorited: Bool?
 
     // 진행바: 마지막으로 앱에 물어본 위치(초)와 그 시각에서 흐른 시간을 더해 그린다
     var duration: Double = 0
@@ -101,6 +108,7 @@ final class NowPlaying {
             artwork = nil
             isPlaying = false
             duration = 0
+            isFavorited = nil
             return
         }
 
@@ -116,7 +124,7 @@ final class NowPlaying {
             loadArtwork(source)
         }
 
-        loadPosition(source)
+        loadPlayerState(source)
     }
 
     func elapsed(at date: Date) -> Double {
@@ -127,7 +135,7 @@ final class NowPlaying {
         return min(duration, position + date.timeIntervalSince(positionDate))
     }
 
-    private func loadPosition(_ source: String) {
+    private func loadPlayerState(_ source: String) {
         guard
             let app = playerApps.first(where: { $0.name == source }),
             isRunning(app)
@@ -135,9 +143,11 @@ final class NowPlaying {
             return
         }
 
-        let script = "tell application \"\(app.name)\" to {player position, duration of current track}"
+        let script = app.name == "Spotify"
+            ? "tell application \"Spotify\" to {player position, duration of current track, shuffling, repeating}"
+            : "tell application \"Music\" to {player position, duration of current track, shuffle enabled, song repeat as string, favorited of current track}"
 
-        guard let result = runAppleScript(script), result.numberOfItems == 2 else {
+        guard let result = runAppleScript(script), result.numberOfItems >= 4 else {
             return
         }
 
@@ -148,6 +158,44 @@ final class NowPlaying {
 
         // 곡 길이 단위: Spotify는 밀리초, Music은 초
         duration = app.name == "Spotify" ? rawDuration / 1000 : rawDuration
+
+        shuffle = result.atIndex(3)?.booleanValue ?? false
+
+        if app.name == "Spotify" {
+            repeatMode = result.atIndex(4)?.booleanValue == true ? "all" : "off"
+            isFavorited = nil
+        } else {
+            repeatMode = result.atIndex(4)?.stringValue ?? "off"
+            isFavorited = result.atIndex(5)?.booleanValue
+        }
+    }
+
+    func toggleShuffle() {
+        let property = currentSource == "Spotify" ? "shuffling" : "shuffle enabled"
+
+        sendAndRefresh("set \(property) to not \(property)")
+    }
+
+    func cycleRepeat() {
+        if currentSource == "Spotify" {
+            sendAndRefresh("set repeating to not repeating")
+            return
+        }
+
+        // Music: 끔 → 전체 → 한 곡 → 끔
+        let next = ["off": "all", "all": "one", "one": "off"][repeatMode] ?? "off"
+
+        sendAndRefresh("set song repeat to \(next)")
+    }
+
+    func toggleFavorite() {
+        sendAndRefresh("set favorited of current track to not (favorited of current track)")
+    }
+
+    // 바꾼 뒤 상태를 바로 다시 읽어 버튼에 반영한다
+    private func sendAndRefresh(_ command: String) {
+        send(command)
+        loadPlayerState(currentSource)
     }
 
     // command: playpause, next track, previous track (Spotify와 Music이 같은 이름을 쓴다)
@@ -176,11 +224,11 @@ final class NowPlaying {
         NSWorkspace.shared.openApplication(at: url, configuration: NSWorkspace.OpenConfiguration())
     }
 
-    // 앱 안에서 재생 위치를 옮기면 알림이 오지 않아서, 노치를 펼칠 때 다시 묻는다
-    func refreshPosition() {
+    // 앱 안에서 재생 위치·셔플·반복을 바꾸면 알림이 오지 않아서, 노치를 펼칠 때 다시 묻는다
+    func refreshPlayerState() {
         let predicted = elapsed(at: Date())
 
-        loadPosition(currentSource)
+        loadPlayerState(currentSource)
 
         // 진행바가 앱의 실제 위치와 얼마나 어긋나 있었는지 (양수면 진행바가 앞서 있었음)
         log.notice("drift \(predicted - self.position, format: .fixed(precision: 2))s")

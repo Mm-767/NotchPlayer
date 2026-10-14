@@ -2,7 +2,7 @@ import AppKit
 import ServiceManagement
 import SwiftUI
 
-let expandedSize = CGSize(width: 400, height: 160)
+let expandedSize = CGSize(width: 440, height: 160)
 
 struct NotchView: View {
     let notchSize: CGSize
@@ -27,7 +27,7 @@ struct NotchView: View {
         .frame(width: size.width, height: size.height)
         .onHover { hovering in
             if hovering {
-                nowPlaying.refreshPosition()
+                nowPlaying.refreshPlayerState()
             }
 
             withAnimation(.spring(duration: 0.3)) {
@@ -43,6 +43,12 @@ struct NotchView: View {
 
     private var controls: some View {
         HStack(spacing: 16) {
+            toggleButton(
+                "shuffle",
+                isOn: nowPlaying.shuffle,
+                action: nowPlaying.toggleShuffle
+            )
+
             controlButton("backward.fill", command: "previous track")
 
             controlButton(
@@ -51,7 +57,22 @@ struct NotchView: View {
             )
 
             controlButton("forward.fill", command: "next track")
+
+            toggleButton(
+                nowPlaying.repeatMode == "one" ? "repeat.1" : "repeat",
+                isOn: nowPlaying.repeatMode != "off",
+                action: nowPlaying.cycleRepeat
+            )
         }
+    }
+
+    // 켜져 있으면 흰색, 꺼져 있으면 회색
+    private func toggleButton(_ symbol: String, isOn: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: symbol)
+                .foregroundStyle(isOn ? .white : .gray)
+        }
+        .buttonStyle(.plain)
     }
 
     private func controlButton(_ symbol: String, command: String) -> some View {
@@ -112,9 +133,19 @@ struct NotchView: View {
                     Text("재생 중인 곡 없음")
                         .foregroundStyle(.gray)
                 } else {
-                    Text(nowPlaying.title)
-                        .font(.headline)
-                        .foregroundStyle(.white)
+                    HStack(spacing: 6) {
+                        Text(nowPlaying.title)
+                            .font(.headline)
+                            .foregroundStyle(.white)
+
+                        if let isFavorited = nowPlaying.isFavorited {
+                            toggleButton(
+                                isFavorited ? "heart.fill" : "heart",
+                                isOn: isFavorited,
+                                action: nowPlaying.toggleFavorite
+                            )
+                        }
+                    }
 
                     Text(nowPlaying.artist)
                         .foregroundStyle(.gray)
