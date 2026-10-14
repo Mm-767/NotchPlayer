@@ -9,6 +9,8 @@
 - 평소에는 노치와 같은 크기의 검은 캡슐로 숨어 있고, 마우스를 올리면 펼쳐집니다
 - 지금 재생 중인 곡의 제목, 아티스트, 앨범아트
 - 재생/일시정지, 다음 곡, 이전 곡
+- 셔플, 반복 (Spotify는 켜짐/꺼짐, Apple Music은 끔 → 전체 → 한 곡)
+- 좋아요 (Apple Music만, 제목 옆 하트)
 - 진행바를 클릭하거나 끌어서 재생 위치 옮기기
 - 앨범아트를 누르면 재생 중인 앱(Spotify, Music) 열기
 - 둘 다 재생 중이면 마지막으로 재생을 시작한 앱을 보여줌
@@ -22,7 +24,7 @@ macOS 15.4부터 시스템 전체의 "지금 재생 중" 정보(비공개 MediaR
 |---|---|
 | 곡이 바뀐 걸 알기 | Spotify `com.spotify.client.PlaybackStateChanged`, Music `com.apple.Music.playerInfo` 분산 알림 구독 |
 | 앨범아트, 재생 위치, 켤 때 현재 곡 | AppleScript로 앱에 직접 묻기 |
-| 재생 제어, 위치 옮기기 | AppleScript (`playpause`, `next track`, `set player position`) |
+| 재생 제어, 위치 옮기기, 셔플·반복·좋아요 | AppleScript (`playpause`, `next track`, `set player position`, `shuffling`, `song repeat`, `favorited` 등) |
 | 노치 위 창 | `NSPanel` (borderless, nonactivating) + SwiftUI |
 
 AppleScript를 쓰기 때문에 처음 실행할 때 "NotchPlayer가 Spotify를 제어하려고 합니다" 자동화 권한을 한 번 허용해야 합니다.
@@ -66,6 +68,8 @@ swift test
 ## 알려진 한계
 
 - Spotify, Apple Music 외 앱(브라우저 유튜브 등)은 표시되지 않습니다
-- Spotify 앱 안에서 재생 위치를 옮기면 알림이 오지 않아서, 노치를 다시 펼칠 때 맞춰집니다
+- Spotify 좋아요는 없습니다. Spotify AppleScript의 `starred`가 읽기 전용이라 바꿀 수 없고, Web API(로그인·토큰 관리 필요)는 쓰지 않기로 했습니다
+- Spotify 반복은 켜짐/꺼짐만 됩니다(AppleScript가 한 곡 반복을 지원하지 않음)
+- Spotify 앱 안에서 재생 위치, 셔플, 반복을 바꾸면 알림이 오지 않아서 노치를 다시 펼칠 때 맞춰집니다
 - AppleScript를 메인 스레드에서 실행합니다. 지금은 최대 69ms라 문제없지만 앱 응답이 느려지면 화면이 잠깐 멈출 수 있습니다
 - 외부 모니터만 쓸 때는 노치가 있는 화면이 없어서 메인 화면 위쪽에 붙습니다
