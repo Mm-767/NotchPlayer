@@ -1,5 +1,5 @@
 #!/bin/sh
-# GitHub Releases에 올릴 zip을 만든다. 공증하지 않으므로 받는 쪽에서 처음 열 때 Gatekeeper가 막는다(README 설치 참고)
+# GitHub Releases에 올릴 zip과 dmg를 만든다. 공증하지 않으므로 받는 쪽에서 처음 열 때 Gatekeeper가 막는다(README 설치 참고)
 set -e
 
 cd "$(dirname "$0")/.."
