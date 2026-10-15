@@ -17,4 +17,10 @@ ZIP="dist/NotchPlayer-v$VERSION.zip"
 rm -f "$ZIP"
 ditto -c -k --keepParent "$STAGE/NotchPlayer.app" "$ZIP"
 
+# dmg를 열면 앱을 응용 프로그램 폴더로 끌어다 놓을 수 있게 바로가기를 같이 넣는다
+DMG="dist/NotchPlayer-v$VERSION.dmg"
+ln -s /Applications "$STAGE/Applications"
+hdiutil create -volname NotchPlayer -srcfolder "$STAGE" -ov -format UDZO "$DMG"
+
 echo "$ZIP"
+echo "$DMG"

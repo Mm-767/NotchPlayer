@@ -35,7 +35,7 @@ AppleScript를 쓰기 때문에 처음 실행할 때 "NotchPlayer가 Spotify를 
 
 macOS 14 이상, 노치가 있는 맥북이 필요합니다.
 
-1. [Releases](https://github.com/Mm-767/NotchPlayer/releases)에서 `NotchPlayer-v<버전>.zip`을 내려받아 풀고, `NotchPlayer.app`을 응용 프로그램 폴더로 옮깁니다.
+1. [Releases](https://github.com/Mm-767/NotchPlayer/releases)에서 `NotchPlayer-v<버전>.dmg`를 내려받아 열고, `NotchPlayer.app`을 옆의 `Applications` 폴더로 끌어다 놓습니다. zip을 받았다면 풀어서 응용 프로그램 폴더로 옮기면 됩니다.
 2. 처음 열면 "확인되지 않은 개발자" 경고와 함께 열리지 않습니다. Apple 공증을 받지 않은 앱이라서입니다. 둘 중 하나로 엽니다.
    - 시스템 설정 → 개인정보 보호 및 보안 → 아래쪽 "그래도 열기"
    - 터미널에서 `xattr -dr com.apple.quarantine /Applications/NotchPlayer.app` 실행 후 다시 열기
@@ -56,7 +56,7 @@ open /Applications/NotchPlayer.app
 
 `scripts/build-app.sh`는 릴리스 빌드를 `/Applications/NotchPlayer.app`으로 묶고 키체인의 "Apple Development" 인증서로 서명합니다. 같은 인증서로 서명하면 다시 빌드해도 자동화 권한을 다시 묻지 않습니다. 인증서가 없으면 스크립트의 `--sign` 값을 `-`(ad-hoc)로 바꾸면 되는데, 이 경우 빌드할 때마다 권한을 다시 물을 수 있습니다(확인하지 않음).
 
-배포용 zip은 `scripts/release.sh`로 만듭니다. 개발용 인증서 대신 ad-hoc 서명으로 빌드해 `dist/`에 넣습니다.
+배포용 zip과 dmg는 `scripts/release.sh`로 만듭니다. 개발용 인증서 대신 ad-hoc 서명으로 빌드해 `dist/`에 넣습니다.
 
 테스트:
 
