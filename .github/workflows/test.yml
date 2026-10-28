@@ -1,0 +1,20 @@
+# AppKit을 쓰므로 macOS에서만 빌드·테스트할 수 있다
+name: Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Swift 버전
+        run: swift --version
+
+      - name: 테스트
+        run: swift test
