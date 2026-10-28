@@ -48,6 +48,9 @@ final class NowPlaying {
     // 둘 다 재생 중이면 마지막으로 재생을 시작한 앱을 보여준다
     private var currentSource = ""
 
+    // 곡이 바뀐 뒤 진행바를 다시 맞추려고 예약해 둔 재요청
+    private var pendingReload: Task<Void, Never>?
+
     func start() {
         for app in playerApps {
             DistributedNotificationCenter.default().addObserver(
@@ -125,6 +128,30 @@ final class NowPlaying {
         }
 
         loadPlayerState(source)
+
+        if trackChanged {
+            reloadPlayerStateLater(source)
+        }
+    }
+
+    // 곡이 바뀐 직후에는 앱이 이전 곡의 위치·길이를 돌려줄 때가 있어서, 잠시 뒤 다시 묻는다
+    // (펼친 채로 있으면 refreshPlayerState가 불리지 않아 진행바가 이전 곡 기준으로 남는다)
+    private func reloadPlayerStateLater(_ source: String) {
+        let requestedTitle = title
+
+        pendingReload?.cancel()
+        pendingReload = Task {
+            for delay in [0.5, 2.0] {
+                try? await Task.sleep(for: .seconds(delay))
+
+                // 기다리는 사이에 곡이 또 바뀌었으면 그 곡의 재요청에 맡긴다
+                guard !Task.isCancelled, title == requestedTitle, source == currentSource else {
+                    return
+                }
+
+                loadPlayerState(source)
+            }
+        }
     }
 
     func elapsed(at date: Date) -> Double {
