@@ -122,9 +122,30 @@ final class NowPlaying {
         if trackChanged {
             artwork = nil
             loadArtwork(source)
+            loadPlayerStateLater(source)
         }
 
         loadPlayerState(source)
+    }
+
+    // 곡이 바뀐 알림 직후에 물으면 앱이 아직 이전 곡의 위치·길이를 줄 때가 있어서, 잠시 뒤 한 번 더 묻는다
+    private func loadPlayerStateLater(_ source: String) {
+        let requestedTitle = title
+
+        Task {
+            try? await Task.sleep(for: .seconds(1))
+
+            // 기다리는 사이에 곡이 또 바뀌었으면 그 곡의 알림이 알아서 다시 묻는다
+            guard title == requestedTitle else {
+                return
+            }
+
+            let predicted = elapsed(at: Date())
+
+            loadPlayerState(source)
+
+            log.notice("track change drift \(predicted - self.position, format: .fixed(precision: 2))s")
+        }
     }
 
     func elapsed(at date: Date) -> Double {
