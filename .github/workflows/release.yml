@@ -1,0 +1,49 @@
+# Info.plist의 버전으로 zip·dmg를 만들어 GitHub Releases에 올린다. Actions 탭에서 수동으로 실행한다
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      notes:
+        description: 릴리스 노트 (비우면 커밋 목록으로 자동 생성)
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    # main이 아닌 브랜치에서 잘못 실행해도 올라가지 않게
+    if: github.ref == 'refs/heads/main'
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 테스트
+        run: swift test
+
+      - name: zip·dmg 만들기
+        run: scripts/release.sh
+
+      # 같은 버전 태그가 이미 있으면 gh가 실패하므로, Info.plist 버전을 올리지 않고 실행하면 여기서 멈춘다
+      - name: 릴리스 올리기
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NOTES: ${{ inputs.notes }}
+        run: |
+          VERSION=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" Info.plist)
+
+          if [ -n "$NOTES" ]; then
+            printf '%s\n' "$NOTES" > "$RUNNER_TEMP/notes.md"
+            NOTES_ARGS="--notes-file $RUNNER_TEMP/notes.md"
+          else
+            NOTES_ARGS="--generate-notes"
+          fi
+
+          gh release create "v$VERSION" \
+            "dist/NotchPlayer-v$VERSION.zip" \
+            "dist/NotchPlayer-v$VERSION.dmg" \
+            --target "$GITHUB_SHA" \
+            --title "NotchPlayer v$VERSION" \
+            $NOTES_ARGS

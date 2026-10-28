@@ -58,6 +58,8 @@ open /Applications/NotchPlayer.app
 
 배포용 zip과 dmg는 `scripts/release.sh`로 만듭니다. 개발용 인증서 대신 ad-hoc 서명으로 빌드해 `dist/`에 넣습니다.
 
+릴리스는 `Info.plist`의 `CFBundleShortVersionString`을 올려 `main`에 넣은 뒤, GitHub Actions의 Release 워크플로를 수동으로 실행하면 됩니다. macOS 러너에서 `scripts/release.sh`로 zip과 dmg를 만들어 `v<버전>` 태그로 Releases에 올립니다.
+
 테스트:
 
 ```sh
