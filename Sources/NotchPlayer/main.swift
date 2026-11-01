@@ -2,16 +2,14 @@ import AppKit
 import ServiceManagement
 import SwiftUI
 
-let expandedSize = CGSize(width: 440, height: 160)
-
 struct NotchView: View {
-    let notchSize: CGSize
+    let layout: NotchLayout
     let nowPlaying: NowPlaying
 
     @State private var isExpanded = false
 
     var body: some View {
-        let size = isExpanded ? expandedSize : notchSize
+        let size = isExpanded ? expandedSize : layout.notchSize
         let radius: CGFloat = isExpanded ? 24 : 10
 
         UnevenRoundedRectangle(
@@ -105,7 +103,7 @@ struct NotchView: View {
             }
         }
         .lineLimit(1)
-        .padding(.top, notchSize.height)
+        .padding(.top, layout.notchSize.height)
         .padding(.horizontal, 24)
         .frame(
             maxWidth: .infinity,
@@ -181,27 +179,8 @@ if !UserDefaults.standard.bool(forKey: "didRegisterLoginItem"),
     UserDefaults.standard.set(true, forKey: "didRegisterLoginItem")
 }
 
-// 노치가 있는 화면 (외부 모니터가 main일 수 있어서 직접 찾는다)
-let screen = NSScreen.screens.first { $0.safeAreaInsets.top > 0 } ?? NSScreen.main!
-
-// 노치 높이 = 메뉴바 높이, 노치 너비 = 화면 너비 - 노치 양옆 메뉴바 너비
-let leftWidth = screen.auxiliaryTopLeftArea?.width ?? 0
-let rightWidth = screen.auxiliaryTopRightArea?.width ?? 0
-let notchSize = CGSize(
-    width: screen.frame.width - leftWidth - rightWidth,
-    height: screen.safeAreaInsets.top
-)
-
-// 창은 펼친 크기로 고정하고, 검은 영역 밖의 투명한 부분은 클릭이 아래로 통과한다
-let panelFrame = CGRect(
-    x: screen.frame.midX - expandedSize.width / 2,
-    y: screen.frame.maxY - expandedSize.height,
-    width: expandedSize.width,
-    height: expandedSize.height
-)
-
 let panel = NSPanel(
-    contentRect: panelFrame,
+    contentRect: CGRect(origin: .zero, size: expandedSize),
     styleMask: [.borderless, .nonactivatingPanel],
     backing: .buffered,
     defer: false
@@ -220,14 +199,42 @@ panel.collectionBehavior = [
 panel.isOpaque = false
 panel.backgroundColor = .clear
 panel.hasShadow = false
+
+let layout = NotchLayout()
 let nowPlaying = NowPlaying()
 nowPlaying.start()
 
 panel.contentView = NSHostingView(
-    rootView: NotchView(notchSize: notchSize, nowPlaying: nowPlaying)
+    rootView: NotchView(layout: layout, nowPlaying: nowPlaying)
 )
-panel.orderFrontRegardless()
 
-print("notch: \(notchSize), panel: \(panelFrame)")
+// 노치(없으면 메뉴바 가운데)에 맞춰 창 위치와 검은 캡슐 크기를 정한다
+@MainActor
+func placePanel() {
+    guard let placement = NotchPlacement.current() else {
+        return
+    }
+
+    layout.notchSize = placement.notchSize
+    panel.setFrame(placement.panelFrame, display: true)
+
+    print("notch: \(placement.notchSize), panel: \(placement.panelFrame)")
+}
+
+placePanel()
+
+// 모니터를 꽂거나 빼고, 맥북 뚜껑을 닫거나 열면 macOS가 창을 남은 화면 아무 데나 옮겨서
+// 노치 크기의 검은 막대가 화면 중간에 떠 있게 된다. 화면 구성이 바뀔 때마다 다시 붙인다
+NotificationCenter.default.addObserver(
+    forName: NSApplication.didChangeScreenParametersNotification,
+    object: nil,
+    queue: .main
+) { _ in
+    MainActor.assumeIsolated {
+        placePanel()
+    }
+}
+
+panel.orderFrontRegardless()
 
 app.run()
