@@ -49,20 +49,13 @@ struct NotchPlacement {
 }
 
 extension NotchPlacement {
-    // 노치가 있는 화면을 먼저 쓴다 (외부 모니터가 주 화면일 수 있어서 직접 찾는다).
-    // 없으면(뚜껑을 닫고 외부 모니터만 쓸 때 등) 메뉴바가 있는 주 화면에 붙는다
+    // 화면 하나에 붙일 위치. 노치가 있으면 노치에, 없으면 그 화면 메뉴바 가운데에 붙는다
     @MainActor
-    static func current() -> NotchPlacement? {
-        guard let screen = NSScreen.screens.first(where: { $0.safeAreaInsets.top > 0 })
-            ?? NSScreen.screens.first
-        else {
-            return nil
-        }
-
+    init(screen: NSScreen) {
         // 메뉴바 자동 가리기를 켜면 visibleFrame이 메뉴바 자리까지 덮어서 0이 나온다
         let menuBarHeight = screen.frame.maxY - screen.visibleFrame.maxY
 
-        return NotchPlacement(
+        self.init(
             screenFrame: screen.frame,
             safeAreaTop: screen.safeAreaInsets.top,
             notchLeftWidth: screen.auxiliaryTopLeftArea?.width,

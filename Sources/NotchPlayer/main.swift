@@ -179,49 +179,12 @@ if !UserDefaults.standard.bool(forKey: "didRegisterLoginItem"),
     UserDefaults.standard.set(true, forKey: "didRegisterLoginItem")
 }
 
-let panel = NSPanel(
-    contentRect: CGRect(origin: .zero, size: expandedSize),
-    styleMask: [.borderless, .nonactivatingPanel],
-    backing: .buffered,
-    defer: false
-)
-
-// 메뉴바보다 위에 그린다
-panel.level = .statusBar
-
-// 모든 데스크톱(Space)과 전체화면 앱 위에서도 보이게
-panel.collectionBehavior = [
-    .canJoinAllSpaces,
-    .stationary,
-    .fullScreenAuxiliary
-]
-
-panel.isOpaque = false
-panel.backgroundColor = .clear
-panel.hasShadow = false
-
-let layout = NotchLayout()
 let nowPlaying = NowPlaying()
 nowPlaying.start()
 
-panel.contentView = NSHostingView(
-    rootView: NotchView(layout: layout, nowPlaying: nowPlaying)
-)
-
-// 노치(없으면 메뉴바 가운데)에 맞춰 창 위치와 검은 캡슐 크기를 정한다
-@MainActor
-func placePanel() {
-    guard let placement = NotchPlacement.current() else {
-        return
-    }
-
-    layout.notchSize = placement.notchSize
-    panel.setFrame(placement.panelFrame, display: true)
-
-    print("notch: \(placement.notchSize), panel: \(placement.panelFrame)")
-}
-
-placePanel()
+// 맥북 화면과 외부 모니터마다 하나씩 띄운다
+let notchWindows = NotchWindows(nowPlaying: nowPlaying)
+notchWindows.update()
 
 // 모니터를 꽂거나 빼고, 맥북 뚜껑을 닫거나 열면 macOS가 창을 남은 화면 아무 데나 옮겨서
 // 노치 크기의 검은 막대가 화면 중간에 떠 있게 된다. 화면 구성이 바뀔 때마다 다시 붙인다
@@ -231,10 +194,8 @@ NotificationCenter.default.addObserver(
     queue: .main
 ) { _ in
     MainActor.assumeIsolated {
-        placePanel()
+        notchWindows.update()
     }
 }
-
-panel.orderFrontRegardless()
 
 app.run()
