@@ -198,4 +198,8 @@ NotificationCenter.default.addObserver(
     }
 }
 
+// GitHub Releases에 새 버전이 올라오면 알아서 받아 바꿔 끼우고 다시 실행한다
+let updater = Updater()
+updater.start()
+
 app.run()
