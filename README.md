@@ -18,6 +18,7 @@
 - 앨범아트를 누르면 재생 중인 앱(Spotify, Music) 열기
 - 둘 다 재생 중이면 마지막으로 재생을 시작한 앱을 보여줌
 - 로그인할 때 자동 실행 (처음 한 번 등록, 시스템 설정 → 로그인 항목에서 끌 수 있음)
+- 자동 업데이트 (한 시간에 한 번 Releases를 확인해 새 버전이 있으면 받아서 바꿔 끼우고 다시 실행)
 
 ## 동작 방식
 
@@ -44,6 +45,12 @@ macOS 14 이상, 노치가 있는 맥북이 필요합니다.
 
 처음 한 번 열면 로그인 항목에 등록되어, 다음부터는 맥을 켤 때 자동으로 실행됩니다.
 
+v0.1.4부터는 새 버전이 나오면 앱이 알아서 업데이트합니다. 응용 프로그램 폴더처럼 쓰기 권한이 있는 곳에 있어야 하고, 다운로드 폴더에서 바로 연 앱은 업데이트하지 않습니다. 업데이트 기록은 이렇게 볼 수 있습니다.
+
+```sh
+/usr/bin/log show --predicate 'subsystem == "io.github.mm-767.NotchPlayer" && category == "update"' --last 1d --style compact
+```
+
 ## 직접 빌드하기
 
 macOS 14 이상, Xcode(Swift 6), 노치가 있는 맥북이 필요합니다.
@@ -59,7 +66,7 @@ open /Applications/NotchPlayer.app
 
 배포용 zip과 dmg는 `scripts/release.sh`로 만듭니다. 개발용 인증서 대신 ad-hoc 서명으로 빌드해 `dist/`에 넣습니다.
 
-릴리스는 `Info.plist`의 `CFBundleShortVersionString`을 올려 `main`에 넣은 뒤, GitHub Actions의 Release 워크플로를 수동으로 실행하면 됩니다. macOS 러너에서 `scripts/release.sh`로 zip과 dmg를 만들어 `v<버전>` 태그로 Releases에 올립니다.
+릴리스는 `Info.plist`의 `CFBundleShortVersionString`을 올려 `main`에 넣으면 됩니다. Release 워크플로가 자동으로 돌아 macOS 러너에서 `scripts/release.sh`로 zip과 dmg를 만들고 `v<버전>` 태그로 Releases에 올립니다. 이미 올린 버전이면 건너뛰고, Actions 탭에서 릴리스 노트를 적어 수동으로 실행할 수도 있습니다. 설치된 앱은 한 시간 안에 새 버전을 받아 다시 실행합니다.
 
 테스트:
 
@@ -93,3 +100,5 @@ swift test
 - Spotify 반복은 켜짐/꺼짐만 됩니다(AppleScript가 한 곡 반복을 지원하지 않음)
 - Spotify 앱 안에서 재생 위치, 셔플, 반복을 바꾸면 알림이 오지 않아서 노치를 다시 펼칠 때 맞춰집니다
 - AppleScript를 메인 스레드에서 실행합니다. 지금은 최대 69ms라 문제없지만 앱 응답이 느려지면 화면이 잠깐 멈출 수 있습니다
+- 배포판은 ad-hoc 서명이라, 자동 업데이트 뒤 자동화 권한을 다시 물을 수 있습니다(확인하지 않음)
+- 자동 업데이트는 서명한 사람이 아니라 GitHub에 올라간 파일의 SHA-256과 코드 서명이 깨지지 않았는지만 확인합니다

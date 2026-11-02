@@ -1,7 +1,12 @@
-# Info.plist의 버전으로 zip·dmg를 만들어 GitHub Releases에 올린다. Actions 탭에서 수동으로 실행한다
+# Info.plist의 버전으로 zip·dmg를 만들어 GitHub Releases에 올린다.
+# main에서 Info.plist 버전이 바뀌면 자동으로 돌고, Actions 탭에서 수동으로도 실행할 수 있다.
+# 설치된 앱은 한 시간에 한 번 Releases를 확인해 새 버전으로 스스로 업데이트한다(Updater.swift)
 name: Release
 
 on:
+  push:
+    branches: [main]
+    paths: [Info.plist]
   workflow_dispatch:
     inputs:
       notes:
@@ -12,6 +17,11 @@ on:
 permissions:
   contents: write
 
+# 같은 버전을 두 번 올리지 않게 한 번에 하나씩
+concurrency:
+  group: release
+  cancel-in-progress: false
+
 jobs:
   release:
     # main이 아닌 브랜치에서 잘못 실행해도 올라가지 않게
@@ -20,20 +30,37 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Info.plist에서 버전 말고 다른 걸 고쳐도 이 워크플로가 돌므로, 이미 올린 버전이면 건너뛴다
+      - name: 버전 확인
+        id: version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" Info.plist)
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+          if gh release view "v$VERSION" > /dev/null 2>&1; then
+            echo "::notice::v$VERSION은 이미 릴리스되어 건너뜁니다. Info.plist 버전을 올려 주세요"
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: 테스트
+        if: steps.version.outputs.exists == 'false'
         run: swift test
 
       - name: zip·dmg 만들기
+        if: steps.version.outputs.exists == 'false'
         run: scripts/release.sh
 
-      # 같은 버전 태그가 이미 있으면 gh가 실패하므로, Info.plist 버전을 올리지 않고 실행하면 여기서 멈춘다
       - name: 릴리스 올리기
+        if: steps.version.outputs.exists == 'false'
         env:
           GH_TOKEN: ${{ github.token }}
           NOTES: ${{ inputs.notes }}
+          VERSION: ${{ steps.version.outputs.version }}
         run: |
-          VERSION=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" Info.plist)
-
           if [ -n "$NOTES" ]; then
             printf '%s\n' "$NOTES" > "$RUNNER_TEMP/notes.md"
             NOTES_ARGS="--notes-file $RUNNER_TEMP/notes.md"
